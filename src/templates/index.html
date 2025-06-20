@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tokenizator Plus</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <main class="main-container">
+        <h1 class="title">Tokenizator Plus</h1>
+        <p class="subtitle">Cole o caminho de uma pasta e adicione padrões para ignorar arquivos ou diretórios.</p>
+
+        <form id="path-form" class="path-form">
+            <input 
+                type="text" 
+                id="path-input" 
+                class="path-input"
+                placeholder="/caminho/para/projeto"
+                required>
+            <button type="submit" class="button button-primary">Analisar</button>
+        </form>
+
+        <div class="ignore-section">
+            <form id="ignore-form" class="ignore-form">
+                <input 
+                    type="text" 
+                    id="ignore-input" 
+                    class="path-input"
+                    placeholder="Padrão a ignorar (ex: node_modules, *.log, **/*.tmp)">
+            </form>
+            <ul id="ignore-list" class="tag-list">
+            </ul>
+        </div>
+
+        <div id="controls" class="controls-bar hidden">
+            <button id="copy-button" class="button">
+                Copiar Tudo
+            </button>
+            <div class="token-info">
+                Tokens estimados: <span id="token-count" class="token-count">0</span>
+            </div>
+        </div>
+        
+        <div class="output-container">
+            <pre id="output" class="output-pre"></pre>
+            <div id="loading" class="loading-indicator hidden">Analisando arquivos...</div>
+        </div>
+    </main>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

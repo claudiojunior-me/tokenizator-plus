@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  app-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      # Hot-reload para o código Rust e assets
+      - ./src:/app/src
+      - ./static:/app/static
+      # Volume de dados para análise
+      - ./data:/data
+    environment:
+      - DATA_DIR_BASE=/data
+    tty: true
+    stdin_open: true

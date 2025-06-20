@@ -1,0 +1,203 @@
+/* Define as cores do tema em variáveis para fácil customização */
+:root {
+    --bg-dark: #111827;      /* bg-gray-900 */
+    --bg-medium: #1f2937;   /* bg-gray-800 */
+    --border-color: #374151;/* border-gray-700 */
+    --text-primary: #d1d5db; /* text-gray-300 */
+    --text-secondary: #9ca3af;/* text-gray-400 */
+    --accent-color: #22d3ee;  /* text-cyan-400 */
+    --button-primary-bg: #0891b2; /* bg-cyan-600 */
+    --button-primary-hover: #0e7490; /* hover:bg-cyan-700 */
+    --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-mono: 'Courier New', Courier, monospace;
+}
+
+/* Reset básico e estilos globais */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    color-scheme: dark;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Layout principal */
+.main-container {
+    width: 100%;
+    max-width: 90rem; /* ~1440px */
+    margin: 0 auto;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+/* Tipografia */
+.title {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--accent-color);
+    margin-bottom: 0.5rem;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+}
+
+/* Formulário */
+.path-form {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.path-input {
+    flex-grow: 1;
+    background-color: var(--bg-medium);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    color: var(--text-primary);
+    outline: none;
+}
+
+.path-input:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px var(--accent-color);
+}
+
+/* Botões */
+.button {
+    background-color: var(--bg-medium);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.button:hover {
+    border-color: var(--text-secondary);
+}
+
+.button-primary {
+    background-color: var(--button-primary-bg);
+    border-color: var(--button-primary-bg);
+    color: white;
+}
+
+.button-primary:hover {
+    background-color: var(--button-primary-hover);
+    border-color: var(--button-primary-hover);
+}
+
+/* Barra de controles e output */
+.controls-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.token-info {
+    color: var(--text-secondary);
+}
+
+.token-count {
+    font-family: var(--font-mono);
+    font-weight: bold;
+    color: var(--accent-color);
+}
+
+.output-container {
+    flex-grow: 1;
+    background-color: var(--bg-medium);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 1rem;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.output-pre {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    white-space: pre-wrap;
+    word-break: break-all;
+    flex-grow: 1;
+}
+
+/* Classes de utilidade */
+.hidden {
+    display: none !important;
+}
+
+.loading-indicator {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 2rem;
+}
+
+/* Responsividade para o formulário */
+@media (max-width: 640px) {
+    .path-form {
+        flex-direction: column;
+    }
+}
+
+.ignore-section {
+    margin-bottom: 1.5rem;
+}
+
+.ignore-form {
+    margin-bottom: 0.75rem;
+}
+
+.tag-list {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.tag-item {
+    display: flex;
+    align-items: center;
+    background-color: var(--border-color);
+    color: var(--text-primary);
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px; /* pill shape */
+    font-size: 0.875rem;
+    font-family: var(--font-mono);
+}
+
+.delete-tag-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-weight: bold;
+    font-size: 1rem;
+    margin-left: 0.5rem;
+    cursor: pointer;
+    padding: 0 0.25rem;
+}
+
+.delete-tag-btn:hover {
+    color: var(--text-primary);
+}

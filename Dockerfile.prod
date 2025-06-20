@@ -1,0 +1,23 @@
+# Usa a imagem base do Rust
+FROM rust:1.87-slim-bookworm as builder
+
+WORKDIR /app
+
+# Compila o binário de produção
+COPY src ./src
+COPY Cargo.toml Cargo.lock ./
+RUN cargo build --release
+
+# --- Estágio Final ---
+FROM debian:bookworm-slim as final
+
+WORKDIR /app
+
+# Copia apenas o binário compilado e os arquivos estáticos necessários
+COPY --from=builder /app/target/release/tokenizator-plus .
+COPY src/templates ./src/templates
+COPY static ./static
+
+EXPOSE 3000
+
+CMD ["./tokenizator-plus"]

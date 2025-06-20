@@ -1,0 +1,19 @@
+# Usa a imagem base do Rust. Nenhuma outra dependência de sistema necessária.
+FROM rust:1.87-slim-bookworm
+
+# Instala o cargo-watch para hot-reload
+RUN cargo install cargo-watch
+
+WORKDIR /app
+
+# Cache das dependências Rust
+COPY Cargo.toml Cargo.lock ./
+RUN mkdir src && echo "fn main() {}" > src/main.rs && cargo build --release && rm -rf src target
+
+# Copia todo o código-fonte
+COPY . .
+
+EXPOSE 3000
+
+# Inicia o hot-reload do backend. O frontend não precisa de build.
+CMD ["cargo", "watch", "-q", "-c", "-w", "src/", "-x", "run"]
