@@ -99,6 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await response.json();
             output.textContent = data.content;
+            tokenCountSpan.textContent = data.token_count.toLocaleString('pt-BR');
             controls.classList.remove('hidden');
 
         } catch (error) {
@@ -108,29 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Função para estimar tokens e botão de copiar (inalterados)
-    const estimateTokens = (text) => {
-        if (!text) return 0;
-
-        // Regra 1: Contagem baseada em caracteres (uma regra de ouro comum é ~4 caracteres por token)
-        const charBasedCount = text.length / 4;
-
-        // Regra 2: Contagem baseada em "palavras" e símbolos
-        // Separa por espaços E por caracteres comuns em código que viram tokens
-        const wordLikeTokens = text.split(/[\s\n\r(){}\[\];.,_=\->:]+/).filter(Boolean);
-        const wordBasedCount = wordLikeTokens.length;
-
-        // Média ponderada: Damos mais peso à contagem de palavras/símbolos, 
-        // mas a contagem de caracteres ajuda a corrigir.
-        const estimatedCount = Math.ceil((wordBasedCount * 0.75) + (charBasedCount * 0.25));
-        
-        return estimatedCount;
-    };
-
-    const observer = new MutationObserver(() => {
-        tokenCountSpan.textContent = estimateTokens(output.textContent).toLocaleString('pt-BR');
-    });
-    observer.observe(output, { childList: true, characterData: true, subtree: true });
 
     copyButton.addEventListener('click', () => {
         navigator.clipboard.writeText(output.textContent).then(() => {

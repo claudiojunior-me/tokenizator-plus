@@ -11,7 +11,7 @@ The entire application runs as a single, self-contained binary and is fully cont
 -   **Recursive Directory Analysis**: Provide a path to a local project, and the tool recursively scans its structure.
 -   **File Tree and Content View**: Displays a clean file tree followed by the full content of each file, complete with line numbers for easy reference.
 -   **Dynamic Ignore Patterns**: Use glob patterns (e.g., `node_modules`, `*.log`, `target/**`) to exclude specific files and directories from the analysis in real-time.
--   **Token Estimation**: Get a rough estimate of the token count for the entire processed text, helping to gauge context size for LLMs.
+-   **Token Counting**: Uses the `tiktoken-rs` implementation of OpenAI's `cl100k_base` tokenizer to precisely measure tokens for the concatenated output.
 -   **Fully Dockerized**: Includes separate, optimized Dockerfiles for development (with hot-reloading) and production (with a minimal final image).
 -   **Zero Frontend Dependencies**: The UI is built with pure, dependency-free HTML, CSS, and vanilla JavaScript.
 
@@ -23,6 +23,7 @@ The entire application runs as a single, self-contained binary and is fully cont
     -   [WalkDir](https://crates.io/crates/walkdir): For recursive directory traversal.
     -   [Glob](https://crates.io/crates/glob): For matching ignore patterns.
     -   [Tera](https://tera.netlify.app/): Templating engine for HTML rendering.
+    -   [tiktoken-rs](https://crates.io/crates/tiktoken-rs): Accurate tokenization for OpenAI models.
 -   **Frontend**:
     -   HTML5
     -   Pure CSS3
