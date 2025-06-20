@@ -1,6 +1,6 @@
 # Tokenizator-Plus
 
-A simple yet powerful web utility built in Rust to analyze local codebases. It provides a file tree view, concatenated file content with line numbers, and an estimated token count, making it easy to prepare large code contexts for analysis or use with Large Language Models (LLMs).
+A simple yet powerful web utility built in Rust to analyze local codebases. It provides a file tree view, concatenated file content with line numbers, and an accurate token count, making it easy to prepare large code contexts for analysis or use with Large Language Models (LLMs).
 
 The entire application runs as a single, self-contained binary and is fully containerized with Docker for easy deployment and development.
 
@@ -11,7 +11,7 @@ The entire application runs as a single, self-contained binary and is fully cont
 -   **Recursive Directory Analysis**: Provide a path to a local project, and the tool recursively scans its structure.
 -   **File Tree and Content View**: Displays a clean file tree followed by the full content of each file, complete with line numbers for easy reference.
 -   **Dynamic Ignore Patterns**: Use glob patterns (e.g., `node_modules`, `*.log`, `target/**`) to exclude specific files and directories from the analysis in real-time.
--   **Token Estimation**: Get a rough estimate of the token count for the entire processed text, helping to gauge context size for LLMs.
+-   **Accurate Token Count**: Uses the `tiktoken` library to calculate tokens precisely, helping to gauge context size for LLMs.
 -   **Fully Dockerized**: Includes separate, optimized Dockerfiles for development (with hot-reloading) and production (with a minimal final image).
 -   **Zero Frontend Dependencies**: The UI is built with pure, dependency-free HTML, CSS, and vanilla JavaScript.
 

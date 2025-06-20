@@ -2,6 +2,7 @@ mod file_tree;
 
 use actix_files::Files;
 use actix_web::{web, App, HttpServer, Responder, HttpResponse, error};
+use tiktoken::count_text;
 use serde::{Deserialize, Serialize};
 use tera::Tera;
 use std::{env, path::PathBuf};
@@ -17,6 +18,7 @@ struct PathRequest {
 #[derive(Serialize)]
 struct PathResponse {
     content: String,
+    tokens: usize,
 }
 
 // Handler para a rota principal, renderiza o index.html
@@ -55,7 +57,10 @@ async fn process_path(req: web::Json<PathRequest>) -> Result<HttpResponse, error
     println!("Ignorando padrões: {:?}", req.ignore_patterns);
 
     match file_tree::generate_tree_and_content(&canonical_path, &req.ignore_patterns) {
-        Ok(content) => Ok(HttpResponse::Ok().json(PathResponse { content })),
+        Ok(content) => {
+            let tokens = count_text("gpt-3.5-turbo", &content) as usize;
+            Ok(HttpResponse::Ok().json(PathResponse { content, tokens }))
+        },
         Err(e) => {
             eprintln!("Error processing path: {}", e);
             let user_error = format!("Erro ao processar o caminho '{}': {}. Verifique se o caminho existe e se o container tem permissão de leitura.", req.path, e);
