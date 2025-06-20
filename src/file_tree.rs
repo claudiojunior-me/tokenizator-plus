@@ -118,3 +118,48 @@ pub fn generate_tree_and_content(
 
     Ok(final_output)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    fn create_dir_with_file(lines: usize) -> tempfile::TempDir {
+        let dir = tempdir().unwrap();
+        let file_path = dir.path().join("file.txt");
+        let content: String = (1..=lines)
+            .map(|i| format!("line{}", i))
+            .collect::<Vec<_>>()
+            .join("\n");
+        fs::write(&file_path, content).unwrap();
+        dir
+    }
+
+    fn extract_file_lines(output: &str) -> Vec<String> {
+        let marker = "/file.txt\n--------------------------------------------------\n\n";
+        let start = output
+            .find(marker)
+            .map(|i| i + marker.len())
+            .expect("file block start not found");
+        output[start..]
+            .lines()
+            .take_while(|l| !l.is_empty())
+            .map(|l| l.to_string())
+            .collect()
+    }
+
+    #[test]
+    fn line_numbers_align() {
+        for &count in &[9usize, 10, 100] {
+            let dir = create_dir_with_file(count);
+            let output = generate_tree_and_content(dir.path(), &[]).unwrap();
+            let lines = extract_file_lines(&output);
+            assert_eq!(lines.len(), count);
+            let width = count.to_string().len();
+            for (i, line) in lines.iter().enumerate() {
+                let expected = format!("{:>width$} |", i + 1, width = width);
+                assert!(line.starts_with(&expected), "line '{}', count {}", line, count);
+            }
+        }
+    }
+}
