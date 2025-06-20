@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::{Path};
 use walkdir::{DirEntry, WalkDir};
 use glob::Pattern;
 
