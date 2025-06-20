@@ -15,7 +15,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const ignoreList = document.getElementById('ignore-list');
 
     // Estado da aplicação
-    let ignorePatterns = [];
+    const defaultIgnorePatterns = [
+        '.git',
+        'node_modules',
+        'target',
+        'pnpm-lock.yaml',
+        'yarn.lock',
+        'package-lock.json',
+        '.env'
+    ];
+    let ignorePatterns = [...defaultIgnorePatterns];
 
     // --- TEMA CLARO/ESCURO ---
     const setTheme = (theme) => {
@@ -51,6 +60,9 @@ document.addEventListener('DOMContentLoaded', () => {
             ignoreList.appendChild(li);
         });
     };
+
+    // Renderiza a lista inicial com padrões pré-definidos
+    renderIgnoreList();
 
     ignoreForm.addEventListener('submit', (e) => {
         e.preventDefault();
