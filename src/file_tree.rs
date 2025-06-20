@@ -1,29 +1,23 @@
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use walkdir::{DirEntry, WalkDir};
 use glob::Pattern;
 
-/// Função auxiliar para verificar se uma entrada deve ser ignorada
 fn is_ignored(entry: &DirEntry, root_path: &Path, ignore_patterns: &[Pattern]) -> bool {
-    // Obtém o caminho relativo da entrada
     if let Ok(relative_path) = entry.path().strip_prefix(root_path) {
-        // Verifica se o caminho relativo corresponde a algum dos padrões de exclusão
         for pattern in ignore_patterns {
             if pattern.matches_path(relative_path) {
-                return true; // Se corresponder, deve ser ignorado
+                return true;
             }
         }
     }
-    false // Se não corresponder a nenhum padrão, não deve ser ignorado
+    false
 }
 
-/// Gera a árvore de diretórios e o conteúdo concatenado dos arquivos.
 pub fn generate_tree_and_content(
     root_path: &Path,
     ignore_patterns_str: &[String],
 ) -> Result<String, std::io::Error> {
-
-    // Compila os padrões de string para padrões Glob, ignorando os que forem inválidos
     let ignore_patterns: Vec<Pattern> = ignore_patterns_str
         .iter()
         .filter_map(|s| Pattern::new(s).ok())
@@ -33,9 +27,8 @@ pub fn generate_tree_and_content(
     let mut file_paths = Vec::new();
 
     let mut tree_display = String::new();
-    tree_display.push_str(".\n"); // Adiciona a raiz da árvore
+    tree_display.push_str(".\n");
 
-    // Usa `filter_entry` para pular arquivos/diretórios que correspondem aos padrões
     let walker = WalkDir::new(root_path)
         .into_iter()
         .filter_entry(|e| !is_ignored(e, root_path, &ignore_patterns));
@@ -43,10 +36,10 @@ pub fn generate_tree_and_content(
     for entry_result in walker {
         let entry = match entry_result {
             Ok(e) => e,
-            Err(_) => continue, // Pula entradas com erro de leitura
+            Err(_) => continue,
         };
 
-        // Ignora a própria pasta raiz
+        // Skip the root folder itself
         if entry.path() == root_path {
             continue;
         }
@@ -69,11 +62,8 @@ pub fn generate_tree_and_content(
     final_output.push_str("\n\n");
 
 
-    // --- Passagem 2: Ler e Anexar o Conteúdo de Cada Arquivo ---
     for path in file_paths {
-        // --- MUDANÇA AQUI ---
-        // Usa o mesmo método para obter o caminho relativo para exibição no cabeçalho.
-        // Adicionamos uma barra inicial para o formato /caminho/relativo.py
+        // Use the same method to obtain the relative path for display and prepend '/'.
         let display_path = path.strip_prefix(root_path).unwrap_or(&path);
         let display_path_str = format!("/{}", display_path.display());
 
@@ -83,21 +73,16 @@ pub fn generate_tree_and_content(
         
         match fs::read_to_string(&path) {
             Ok(content) => {
-                // 1. Determina a largura necessária para o padding dos números de linha.
+                // 1. Determine the padding width for line numbers.
                 let total_lines = content.lines().count();
-                // Se o arquivo estiver vazio, a largura é 1. Senão, é o número de dígitos do total de linhas.
+                // If the file is empty the width is 1; otherwise use the number of digits.
                 let max_width = if total_lines == 0 { 1 } else { total_lines.to_string().len() };
 
-                // 2. Itera sobre cada linha, obtendo o índice (i) e o conteúdo (line).
+                // 2. Iterate over each line, obtaining the index and content.
                 for (i, line) in content.lines().enumerate() {
-                    // O índice (i) começa em 0, então o número da linha é i + 1.
                     let line_number = i + 1;
-                    
-                    // 3. Formata a nova linha com o número alinhado à direita, o separador e o conteúdo.
-                    //    `{:>width$}` é um formatador especial do Rust:
-                    //    - `:` inicia a formatação.
-                    //    - `>` significa alinhar à direita.
-                    //    - `width$` usa uma variável (neste caso, `max_width`) para definir a largura do padding.
+
+                    // 3. Format the line with the number right-aligned using `{:>width$}`.
                     let formatted_line = format!(
                         "{:>width$} | {}\n",
                         line_number,
@@ -108,8 +93,8 @@ pub fn generate_tree_and_content(
                 }
             },
             Err(_) => {
-                // Mantém a mensagem de erro para arquivos binários ou ilegíveis.
-                final_output.push_str("[Erro: Não foi possível ler o arquivo. Pode ser um arquivo binário.]\n");
+                // Preserve the error message for binary or unreadable files.
+                final_output.push_str("[Error: could not read file. It may be binary.]\n");
             }
         }
         
