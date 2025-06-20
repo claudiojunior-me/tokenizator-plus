@@ -118,3 +118,39 @@ pub fn generate_tree_and_content(
 
     Ok(final_output)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+    use std::fs;
+
+    #[test]
+    fn ignore_patterns_exclude_files_and_dirs() {
+        let dir = tempdir().expect("failed to create temp dir");
+        let root = dir.path();
+
+        // Files and directories to keep
+        fs::write(root.join("keep.txt"), "keep").unwrap();
+        fs::create_dir(root.join("src")).unwrap();
+        fs::write(root.join("src").join("lib.rs"), "lib").unwrap();
+
+        // Items that should be ignored
+        fs::write(root.join("error.log"), "ignore").unwrap();
+        fs::create_dir(root.join("node_modules")).unwrap();
+        fs::write(root.join("node_modules").join("mod.js"), "ignore").unwrap();
+        fs::create_dir_all(root.join("target/debug")).unwrap();
+        fs::write(root.join("target/debug/out.txt"), "ignore").unwrap();
+
+        let patterns = vec!["*.log".to_string(), "node_modules".to_string(), "target".to_string()];
+        let output = generate_tree_and_content(root, &patterns).unwrap();
+
+        assert!(output.contains("keep.txt"));
+        assert!(output.contains("src"));
+        assert!(!output.contains("error.log"));
+        assert!(!output.contains("node_modules"));
+        assert!(!output.contains("target"));
+        assert!(!output.contains("out.txt"));
+        assert!(!output.contains("mod.js"));
+    }
+}
