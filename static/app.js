@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tokenCountSpan = document.getElementById('token-count');
     const controls = document.getElementById('controls');
     const loadingIndicator = document.getElementById('loading');
+    const themeToggle = document.getElementById('theme-toggle');
     
     // Novos elementos para a feature de ignorar
     const ignoreForm = document.getElementById('ignore-form');
@@ -15,6 +16,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Estado da aplicação
     let ignorePatterns = [];
+
+    // --- TEMA CLARO/ESCURO ---
+    const setTheme = (theme) => {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+        themeToggle.textContent = theme === 'dark' ? 'Tema Claro' : 'Tema Escuro';
+    };
+
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    setTheme(savedTheme);
+
+    themeToggle.addEventListener('click', () => {
+        const current = document.documentElement.getAttribute('data-theme');
+        const next = current === 'dark' ? 'light' : 'dark';
+        setTheme(next);
+    });
 
     // --- LÓGICA PARA GERENCIAR A LISTA DE PADRÕES ---
 
