@@ -2,6 +2,7 @@ use std::fs;
 use std::path::Path;
 use walkdir::{DirEntry, WalkDir};
 use glob::Pattern;
+use tiktoken_rs::o200k_base_singleton;
 
 fn is_ignored(entry: &DirEntry, root_path: &Path, ignore_patterns: &[Pattern]) -> bool {
     if let Ok(relative_path) = entry.path().strip_prefix(root_path) {
@@ -102,6 +103,12 @@ pub fn generate_tree_and_content(
     }
 
     Ok(final_output)
+}
+
+/// Conta tokens usando o modelo cl100k_base do tiktoken-rs.
+pub fn count_tokens(text: &str) -> usize {
+    let bpe = o200k_base_singleton();
+    bpe.encode_with_special_tokens(text).len()
 }
 
 #[cfg(test)]

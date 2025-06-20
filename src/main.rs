@@ -15,6 +15,7 @@ struct PathRequest {
 #[derive(Serialize)]
 struct PathResponse {
     content: String,
+    token_count: usize,
 }
 
 async fn index(tera: web::Data<Tera>) -> impl Responder {
@@ -49,7 +50,10 @@ async fn process_path(req: web::Json<PathRequest>) -> Result<HttpResponse, error
     println!("Ignorando padrões: {:?}", req.ignore_patterns);
 
     match file_tree::generate_tree_and_content(&canonical_path, &req.ignore_patterns) {
-        Ok(content) => Ok(HttpResponse::Ok().json(PathResponse { content })),
+        Ok(content) => {
+            let token_count = file_tree::count_tokens(&content);
+            Ok(HttpResponse::Ok().json(PathResponse { content, token_count }))
+        },
         Err(e) => {
             eprintln!("Error processing path: {}", e);
             let user_error = format!(
