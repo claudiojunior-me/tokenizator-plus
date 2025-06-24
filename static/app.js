@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tokenCountSpan = document.getElementById('token-count');
     const controls = document.getElementById('controls');
     const loadingIndicator = document.getElementById('loading');
+    const cancelButton = document.getElementById('cancel-button');
     const themeToggle = document.getElementById('theme-toggle');
     
     // Novos elementos para a feature de ignorar
@@ -25,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
         '.env'
     ];
     let ignorePatterns = [...defaultIgnorePatterns];
+    let currentController = null;
 
     // --- TEMA CLARO/ESCURO ---
     const setTheme = (theme) => {
@@ -91,17 +93,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         output.textContent = '';
         loadingIndicator.classList.remove('hidden');
+        cancelButton.classList.remove('hidden');
         controls.classList.add('hidden');
+
+        currentController = new AbortController();
 
         try {
             // ATUALIZAÇÃO: Enviando os padrões de exclusão no corpo da requisição
             const response = await fetch('/api/process', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     path: path,
                     ignore_patterns: ignorePatterns // Envia o array de padrões
                 }),
+                signal: currentController.signal,
             });
 
             if (!response.ok) {
@@ -115,9 +121,15 @@ document.addEventListener('DOMContentLoaded', () => {
             controls.classList.remove('hidden');
 
         } catch (error) {
-            output.textContent = `Falha na requisição:\n\n${error.message}`;
+            if (error.name === 'AbortError') {
+                output.textContent = 'Análise cancelada.';
+            } else {
+                output.textContent = `Falha na requisição:\n\n${error.message}`;
+            }
         } finally {
             loadingIndicator.classList.add('hidden');
+            cancelButton.classList.add('hidden');
+            currentController = null;
         }
     });
 
@@ -127,5 +139,11 @@ document.addEventListener('DOMContentLoaded', () => {
             copyButton.textContent = 'Copiado!';
             setTimeout(() => { copyButton.textContent = 'Copiar Tudo'; }, 2000);
         });
+    });
+
+    cancelButton.addEventListener('click', () => {
+        if (currentController) {
+            currentController.abort();
+        }
     });
 });
