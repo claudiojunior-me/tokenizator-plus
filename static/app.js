@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const tokenCountSpan = document.getElementById('token-count');
     const controls = document.getElementById('controls');
     const loadingIndicator = document.getElementById('loading');
+    const progressContainer = document.getElementById('progress-container');
+    const progressBar = document.getElementById('progress-bar');
     const themeToggle = document.getElementById('theme-toggle');
     
     // Novos elementos para a feature de ignorar
@@ -91,33 +93,55 @@ document.addEventListener('DOMContentLoaded', () => {
 
         output.textContent = '';
         loadingIndicator.classList.remove('hidden');
+        progressContainer.classList.remove('hidden');
+        progressBar.style.width = '0%';
         controls.classList.add('hidden');
 
         try {
-            // ATUALIZAÇÃO: Enviando os padrões de exclusão no corpo da requisição
-            const response = await fetch('/api/process', {
+            // Envia os padrões de exclusão no corpo da requisição
+            const response = await fetch('/api/process_stream', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     path: path,
                     ignore_patterns: ignorePatterns // Envia o array de padrões
                 }),
             });
-
             if (!response.ok) {
                 const errorText = await response.text();
                 throw new Error(errorText || `Erro HTTP: ${response.status}`);
             }
 
-            const data = await response.json();
-            output.textContent = data.content;
-            tokenCountSpan.textContent = data.token_count.toLocaleString('pt-BR');
-            controls.classList.remove('hidden');
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop();
+                for (const line of lines) {
+                    if (!line.trim()) continue;
+                    const msg = JSON.parse(line);
+                    if (msg.progress !== undefined) {
+                        progressBar.style.width = `${msg.progress}%`;
+                    } else if (msg.done) {
+                        output.textContent = msg.content;
+                        tokenCountSpan.textContent = msg.token_count.toLocaleString('pt-BR');
+                        controls.classList.remove('hidden');
+                    } else if (msg.error) {
+                        output.textContent = `Falha na requisição:\n\n${msg.error}`;
+                    }
+                }
+            }
 
         } catch (error) {
             output.textContent = `Falha na requisição:\n\n${error.message}`;
         } finally {
             loadingIndicator.classList.add('hidden');
+            progressContainer.classList.add('hidden');
         }
     });
 
