@@ -2,9 +2,10 @@ mod file_tree;
 
 use actix_files::Files;
 use actix_web::{web, App, HttpServer, Responder, HttpResponse, error};
+use actix_web::rt::{task, time::timeout};
 use serde::{Deserialize, Serialize};
 use tera::Tera;
-use std::{env, path::PathBuf};
+use std::{env, path::PathBuf, time::Duration};
 
 #[derive(Deserialize)]
 struct PathRequest {
@@ -49,19 +50,37 @@ async fn process_path(req: web::Json<PathRequest>) -> Result<HttpResponse, error
     println!("Processando caminho: {}", canonical_path.display());
     println!("Ignorando padrões: {:?}", req.ignore_patterns);
 
-    match file_tree::generate_tree_and_content(&canonical_path, &req.ignore_patterns) {
-        Ok(content) => {
+    let path = canonical_path.clone();
+    let patterns = req.ignore_patterns.clone();
+
+    let analysis = task::spawn_blocking(move || {
+        file_tree::generate_tree_and_content(&path, &patterns)
+    });
+
+    let analysis_result = match timeout(Duration::from_secs(60), analysis).await {
+        Ok(res) => res,
+        Err(_) => {
+            eprintln!("Analysis timed out");
+            return Err(error::ErrorInternalServerError("Analysis timed out"));
+        }
+    };
+
+    match analysis_result {
+        Ok(Ok(content)) => {
             let token_count = file_tree::count_tokens(&content);
             Ok(HttpResponse::Ok().json(PathResponse { content, token_count }))
         },
-        Err(e) => {
+        Ok(Err(e)) => {
             eprintln!("Error processing path: {}", e);
             let user_error = format!(
                 "Failed to process path '{}': {}. Check that it exists and that the container can read it.",
                 req.path, e
             );
-            // Use a client error (400) because the issue lies with user input.
             Err(error::ErrorBadRequest(user_error))
+        }
+        Err(e) => {
+            eprintln!("Join error: {}", e);
+            Err(error::ErrorInternalServerError("Analysis task failed"))
         }
     }
 }
