@@ -3,6 +3,8 @@ use std::path::Path;
 use walkdir::{DirEntry, WalkDir};
 use glob::Pattern;
 use tiktoken_rs::o200k_base_singleton;
+use tokio::sync::mpsc::UnboundedSender;
+use serde::Serialize;
 
 fn is_ignored(entry: &DirEntry, root_path: &Path, ignore_patterns: &[Pattern]) -> bool {
     if let Ok(relative_path) = entry.path().strip_prefix(root_path) {
@@ -15,9 +17,16 @@ fn is_ignored(entry: &DirEntry, root_path: &Path, ignore_patterns: &[Pattern]) -
     false
 }
 
-pub fn generate_tree_and_content(
+#[derive(Serialize, Clone, Debug)]
+pub struct Progress {
+    pub processed: usize,
+    pub total: usize,
+}
+
+fn generate_tree_and_content_internal(
     root_path: &Path,
     ignore_patterns_str: &[String],
+    progress_tx: Option<&UnboundedSender<Progress>>,
 ) -> Result<String, std::io::Error> {
     let ignore_patterns: Vec<Pattern> = ignore_patterns_str
         .iter()
@@ -40,7 +49,6 @@ pub fn generate_tree_and_content(
             Err(_) => continue,
         };
 
-        // Skip the root folder itself
         if entry.path() == root_path {
             continue;
         }
@@ -58,32 +66,30 @@ pub fn generate_tree_and_content(
         let file_name = relative_path.file_name().unwrap_or_default().to_string_lossy();
         tree_display.push_str(&format!("{}{}{}\n", indent, prefix, file_name));
     }
-    
+
     final_output.push_str(&tree_display);
     final_output.push_str("\n\n");
 
+    let total_files = file_paths.len();
+    if let Some(tx) = progress_tx {
+        tx.send(Progress { processed: 0, total: total_files }).ok();
+    }
 
-    for path in file_paths {
-        // Use the same method to obtain the relative path for display and prepend '/'.
+    for (idx, path) in file_paths.into_iter().enumerate() {
         let display_path = path.strip_prefix(root_path).unwrap_or(&path);
         let display_path_str = format!("/{}", display_path.display());
 
         final_output.push_str("--------------------------------------------------\n");
         final_output.push_str(&format!("{}\n", display_path_str));
         final_output.push_str("--------------------------------------------------\n\n");
-        
+
         match fs::read_to_string(&path) {
             Ok(content) => {
-                // 1. Determine the padding width for line numbers.
                 let total_lines = content.lines().count();
-                // If the file is empty the width is 1; otherwise use the number of digits.
                 let max_width = if total_lines == 0 { 1 } else { total_lines.to_string().len() };
 
-                // 2. Iterate over each line, obtaining the index and content.
                 for (i, line) in content.lines().enumerate() {
                     let line_number = i + 1;
-
-                    // 3. Format the line with the number right-aligned using `{:>width$}`.
                     let formatted_line = format!(
                         "{:>width$} | {}\n",
                         line_number,
@@ -94,16 +100,35 @@ pub fn generate_tree_and_content(
                 }
             },
             Err(_) => {
-                // Preserve the error message for binary or unreadable files.
                 final_output.push_str("[Error: could not read file. It may be binary.]\n");
             }
         }
-        
+
         final_output.push_str("\n\n");
+
+        if let Some(tx) = progress_tx {
+            tx.send(Progress { processed: idx + 1, total: total_files }).ok();
+        }
     }
 
     Ok(final_output)
 }
+
+pub fn generate_tree_and_content(
+    root_path: &Path,
+    ignore_patterns_str: &[String],
+) -> Result<String, std::io::Error> {
+    generate_tree_and_content_internal(root_path, ignore_patterns_str, None)
+}
+
+pub fn generate_tree_and_content_with_progress(
+    root_path: &Path,
+    ignore_patterns_str: &[String],
+    progress_tx: &UnboundedSender<Progress>,
+) -> Result<String, std::io::Error> {
+    generate_tree_and_content_internal(root_path, ignore_patterns_str, Some(progress_tx))
+}
+
 
 /// Conta tokens usando o modelo cl100k_base do tiktoken-rs.
 pub fn count_tokens(text: &str) -> usize {
