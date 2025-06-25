@@ -2,7 +2,7 @@ use std::fs;
 use std::path::Path;
 use walkdir::{DirEntry, WalkDir};
 use glob::Pattern;
-use tiktoken_rs::o200k_base_singleton;
+use tiktoken_rs::cl100k_base_singleton;
 use tokio::sync::mpsc::UnboundedSender;
 use serde::Serialize;
 
@@ -132,7 +132,7 @@ pub fn generate_tree_and_content_with_progress(
 
 /// Conta tokens usando o modelo cl100k_base do tiktoken-rs.
 pub fn count_tokens(text: &str) -> usize {
-    let bpe = o200k_base_singleton();
+    let bpe = cl100k_base_singleton();
     bpe.encode_with_special_tokens(text).len()
 }
 
