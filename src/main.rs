@@ -1,3 +1,4 @@
+mod logger;
 mod file_tree;
 
 use actix_files::Files;
@@ -29,7 +30,7 @@ async fn index(tera: web::Data<Tera>) -> impl Responder {
     match tera.render("index.html", &context) {
         Ok(rendered) => HttpResponse::Ok().content_type("text/html").body(rendered),
         Err(e) => {
-            eprintln!("Template rendering error: {}", e);
+            log_error!("Template rendering error: {}", e);
             HttpResponse::InternalServerError().body("Error rendering template")
         }
     }
@@ -51,9 +52,9 @@ async fn process_path(req: web::Json<PathRequest>) -> Result<HttpResponse, error
         return Err(error::ErrorBadRequest(user_error));
     };
     
-    println!("======================================");
-    println!("Processando caminho: {}", canonical_path.display());
-    println!("Ignorando padrões: {:?}", req.ignore_patterns);
+    log_info!("======================================");
+    log_info!("Processando caminho: {}", canonical_path.display());
+    log_info!("Ignorando padrões: {:?}", req.ignore_patterns);
 
     let path = canonical_path.clone();
     let patterns = req.ignore_patterns.clone();
@@ -65,7 +66,7 @@ async fn process_path(req: web::Json<PathRequest>) -> Result<HttpResponse, error
     let analysis_result = match timeout(Duration::from_secs(60), analysis).await {
         Ok(res) => res,
         Err(_) => {
-            eprintln!("Analysis timed out");
+            log_error!("Analysis timed out");
             return Err(error::ErrorInternalServerError("Analysis timed out"));
         }
     };
@@ -76,7 +77,7 @@ async fn process_path(req: web::Json<PathRequest>) -> Result<HttpResponse, error
             Ok(HttpResponse::Ok().json(PathResponse { content, token_count }))
         },
         Ok(Err(e)) => {
-            eprintln!("Error processing path: {}", e);
+            log_error!("Error processing path: {}", e);
             let user_error = format!(
                 "Failed to process path '{}': {}. Check that it exists and that the container can read it.",
                 req.path, e
@@ -84,7 +85,7 @@ async fn process_path(req: web::Json<PathRequest>) -> Result<HttpResponse, error
             Err(error::ErrorBadRequest(user_error))
         }
         Err(e) => {
-            eprintln!("Join error: {}", e);
+            log_error!("Join error: {}", e);
             Err(error::ErrorInternalServerError("Analysis task failed"))
         }
     }
@@ -140,7 +141,7 @@ async fn process_path_stream(req: web::Json<PathRequest>) -> Result<HttpResponse
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    println!("🚀 Servidor iniciado em http://localhost:3000");
+    log_info!("🚀 Servidor iniciado em http://localhost:3000");
 
     HttpServer::new(|| {
         let tera = Tera::new("src/templates/**/*").expect("Failed to parse templates.");

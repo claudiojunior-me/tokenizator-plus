@@ -2,6 +2,7 @@ use std::fs;
 use std::path::Path;
 use walkdir::{DirEntry, WalkDir};
 use glob::Pattern;
+use crate::{log_debug, log_warn};
 use tiktoken_rs::cl100k_base_singleton;
 use tokio::sync::mpsc::UnboundedSender;
 use serde::Serialize;
@@ -10,6 +11,7 @@ fn is_ignored(entry: &DirEntry, root_path: &Path, ignore_patterns: &[Pattern]) -
     if let Ok(relative_path) = entry.path().strip_prefix(root_path) {
         for pattern in ignore_patterns {
             if pattern.matches_path(relative_path) {
+                log_debug!("Ignoring {} due to pattern {}", relative_path.display(), pattern);
                 return true;
             }
         }
@@ -28,6 +30,11 @@ fn generate_tree_and_content_internal(
     ignore_patterns_str: &[String],
     progress_tx: Option<&UnboundedSender<Progress>>,
 ) -> Result<String, std::io::Error> {
+    log_debug!(
+        "Scanning {} with patterns {:?}",
+        root_path.display(),
+        ignore_patterns_str
+    );
     let ignore_patterns: Vec<Pattern> = ignore_patterns_str
         .iter()
         .filter_map(|s| Pattern::new(s).ok())
@@ -83,6 +90,7 @@ fn generate_tree_and_content_internal(
         final_output.push_str(&format!("{}\n", display_path_str));
         final_output.push_str("--------------------------------------------------\n\n");
 
+        log_debug!("Reading {}", display_path_str);
         match fs::read_to_string(&path) {
             Ok(content) => {
                 let total_lines = content.lines().count();
@@ -99,7 +107,8 @@ fn generate_tree_and_content_internal(
                     final_output.push_str(&formatted_line);
                 }
             },
-            Err(_) => {
+            Err(e) => {
+                log_warn!("Failed to read {}: {}", path.display(), e);
                 final_output.push_str("[Error: could not read file. It may be binary.]\n");
             }
         }
@@ -111,6 +120,7 @@ fn generate_tree_and_content_internal(
         }
     }
 
+    log_debug!("Finished scanning {}", root_path.display());
     Ok(final_output)
 }
 
