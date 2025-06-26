@@ -88,7 +88,17 @@ This is ideal for quick tests or if you prefer not to use Docker.
     cargo run
     ```
 3.  The application will be available at `http://localhost:3000`.
+
 4.  Since the app is running directly on your host, you can provide any absolute path (e.g., `/home/user/my-app`) or a path relative to the `tokenizator-plus` directory in the web UI.
+
+### Environment Variables
+
+- `DATA_DIR_BASE`: Base directory that user-supplied paths are resolved against. When using the Docker image, this is typically `/data`.
+- `LOG_LEVEL`: Controls verbosity of server logs. Accepted values are `error`, `warn`, `info` (default), and `debug`.
+  Example:
+  ```bash
+  LOG_LEVEL=debug cargo run
+  ```
 
 ## ⚙️ How to Use the Interface
 

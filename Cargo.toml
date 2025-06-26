@@ -16,6 +16,7 @@ tokio-stream = "0.1"
 tokio = { version = "1", features = ["rt", "macros"] }
 bytes = "1"
 futures-util = "0.3"
+colored = "3.0"
 
 [dev-dependencies]
 tempfile = "3"
