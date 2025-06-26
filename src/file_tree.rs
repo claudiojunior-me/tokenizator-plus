@@ -1,5 +1,7 @@
 use std::fs;
 use std::path::Path;
+
+use crate::ast_summary;
 use walkdir::{DirEntry, WalkDir};
 use glob::Pattern;
 use tiktoken_rs::cl100k_base_singleton;
@@ -27,6 +29,7 @@ fn generate_tree_and_content_internal(
     root_path: &Path,
     ignore_patterns_str: &[String],
     progress_tx: Option<&UnboundedSender<Progress>>,
+    use_ast_summary: bool,
 ) -> Result<String, std::io::Error> {
     let ignore_patterns: Vec<Pattern> = ignore_patterns_str
         .iter()
@@ -85,18 +88,27 @@ fn generate_tree_and_content_internal(
 
         match fs::read_to_string(&path) {
             Ok(content) => {
-                let total_lines = content.lines().count();
-                let max_width = if total_lines == 0 { 1 } else { total_lines.to_string().len() };
+                if use_ast_summary {
+                    if let Some(summary) = ast_summary::summarize(&path, &content) {
+                        final_output.push_str(&summary);
+                        final_output.push_str("\n");
+                    } else {
+                        final_output.push_str(&content);
+                    }
+                } else {
+                    let total_lines = content.lines().count();
+                    let max_width = if total_lines == 0 { 1 } else { total_lines.to_string().len() };
 
-                for (i, line) in content.lines().enumerate() {
-                    let line_number = i + 1;
-                    let formatted_line = format!(
-                        "{:>width$} | {}\n",
-                        line_number,
-                        line,
-                        width = max_width
-                    );
-                    final_output.push_str(&formatted_line);
+                    for (i, line) in content.lines().enumerate() {
+                        let line_number = i + 1;
+                        let formatted_line = format!(
+                            "{:>width$} | {}\n",
+                            line_number,
+                            line,
+                            width = max_width
+                        );
+                        final_output.push_str(&formatted_line);
+                    }
                 }
             },
             Err(_) => {
@@ -117,16 +129,18 @@ fn generate_tree_and_content_internal(
 pub fn generate_tree_and_content(
     root_path: &Path,
     ignore_patterns_str: &[String],
+    use_ast_summary: bool,
 ) -> Result<String, std::io::Error> {
-    generate_tree_and_content_internal(root_path, ignore_patterns_str, None)
+    generate_tree_and_content_internal(root_path, ignore_patterns_str, None, use_ast_summary)
 }
 
 pub fn generate_tree_and_content_with_progress(
     root_path: &Path,
     ignore_patterns_str: &[String],
+    use_ast_summary: bool,
     progress_tx: &UnboundedSender<Progress>,
 ) -> Result<String, std::io::Error> {
-    generate_tree_and_content_internal(root_path, ignore_patterns_str, Some(progress_tx))
+    generate_tree_and_content_internal(root_path, ignore_patterns_str, Some(progress_tx), use_ast_summary)
 }
 
 
@@ -170,7 +184,7 @@ mod tests {
     fn line_numbers_align() {
         for &count in &[9usize, 10, 100] {
             let dir = create_dir_with_file(count);
-            let output = generate_tree_and_content(dir.path(), &[]).unwrap();
+            let output = generate_tree_and_content(dir.path(), &[], false).unwrap();
             let lines = extract_file_lines(&output);
             assert_eq!(lines.len(), count);
             let width = count.to_string().len();
@@ -199,7 +213,7 @@ mod tests {
         fs::write(root.join("target/debug/out.txt"), "ignore").unwrap();
 
         let patterns = vec!["*.log".to_string(), "node_modules".to_string(), "target".to_string()];
-        let output = generate_tree_and_content(root, &patterns).unwrap();
+        let output = generate_tree_and_content(root, &patterns, false).unwrap();
 
         assert!(output.contains("keep.txt"));
         assert!(output.contains("src"));

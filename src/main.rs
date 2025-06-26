@@ -1,4 +1,5 @@
 mod file_tree;
+mod ast_summary;
 
 use actix_files::Files;
 use actix_web::{web, App, HttpServer, Responder, HttpResponse, error};
@@ -16,6 +17,7 @@ use std::{env, path::PathBuf, time::Duration};
 struct PathRequest {
     path: String,
     ignore_patterns: Vec<String>,
+    ast_summary: bool,
 }
 
 #[derive(Serialize)]
@@ -57,9 +59,10 @@ async fn process_path(req: web::Json<PathRequest>) -> Result<HttpResponse, error
 
     let path = canonical_path.clone();
     let patterns = req.ignore_patterns.clone();
+    let use_ast = req.ast_summary;
 
     let analysis = task::spawn_blocking(move || {
-        file_tree::generate_tree_and_content(&path, &patterns)
+        file_tree::generate_tree_and_content(&path, &patterns, use_ast)
     });
 
     let analysis_result = match timeout(Duration::from_secs(60), analysis).await {
@@ -117,8 +120,9 @@ async fn process_path_stream(req: web::Json<PathRequest>) -> Result<HttpResponse
 
     let out_tx_clone = out_tx.clone();
     let ignore = req.ignore_patterns.clone();
+    let use_ast = req.ast_summary;
     tokio::task::spawn_blocking(move || {
-        match file_tree::generate_tree_and_content_with_progress(&canonical_path, &ignore, &progress_tx) {
+        match file_tree::generate_tree_and_content_with_progress(&canonical_path, &ignore, use_ast, &progress_tx) {
             Ok(content) => {
                 let token_count = file_tree::count_tokens(&content);
                 let msg = json!({"done": true, "content": content, "token_count": token_count});

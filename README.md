@@ -12,6 +12,7 @@ The entire application runs as a single, self-contained binary and is fully cont
 -   **File Tree and Content View**: Displays a clean file tree followed by the full content of each file, complete with line numbers for easy reference.
 -   **Dynamic Ignore Patterns**: Use glob patterns (e.g., `node_modules`, `*.log`, `target/**`) to exclude specific files and directories from the analysis in real-time.
 -   **Token Counting**: Uses the `tiktoken-rs` implementation of OpenAI's `cl100k_base` tokenizer to precisely measure tokens for the concatenated output.
+-   **Optional AST Summaries**: Toggle a Tree-sitter based summary that lists functions and types to drastically reduce token usage when needed.
 -   **Fully Dockerized**: Includes separate, optimized Dockerfiles for development (with hot-reloading) and production (with a minimal final image).
 -   **Zero Frontend Dependencies**: The UI is built with pure, dependency-free HTML, CSS, and vanilla JavaScript.
 
