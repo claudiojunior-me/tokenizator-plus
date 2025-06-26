@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const progressContainer = document.getElementById('progress-container');
     const progressBar = document.getElementById('progress-bar');
     const themeToggle = document.getElementById('theme-toggle');
+    const summaryToggle = document.getElementById('summary-toggle');
     
     // Novos elementos para a feature de ignorar
     const ignoreForm = document.getElementById('ignore-form');
@@ -104,7 +105,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     path: path,
-                    ignore_patterns: ignorePatterns // Envia o array de padrões
+                    ignore_patterns: ignorePatterns, // Envia o array de padrões
+                    ast_summary: summaryToggle.checked
                 }),
             });
             if (!response.ok) {
