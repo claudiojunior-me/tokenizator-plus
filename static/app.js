@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const ignoreForm = document.getElementById('ignore-form');
     const ignoreInput = document.getElementById('ignore-input');
     const ignoreList = document.getElementById('ignore-list');
+    const maxTokensInput = document.getElementById('max-tokens-input');
 
     // Estado da aplicação
     const defaultIgnorePatterns = [
@@ -104,7 +105,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     path: path,
-                    ignore_patterns: ignorePatterns // Envia o array de padrões
+                    ignore_patterns: ignorePatterns, // Envia o array de padrões
+                    max_tokens: parseInt(maxTokensInput.value, 10) || 150000
                 }),
             });
             if (!response.ok) {

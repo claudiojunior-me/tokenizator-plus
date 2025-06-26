@@ -12,6 +12,7 @@ The entire application runs as a single, self-contained binary and is fully cont
 -   **File Tree and Content View**: Displays a clean file tree followed by the full content of each file, complete with line numbers for easy reference.
 -   **Dynamic Ignore Patterns**: Use glob patterns (e.g., `node_modules`, `*.log`, `target/**`) to exclude specific files and directories from the analysis in real-time.
 -   **Token Counting**: Uses the `tiktoken-rs` implementation of OpenAI's `cl100k_base` tokenizer to precisely measure tokens for the concatenated output.
+-   **Custom Token Limit**: Specify a maximum number of tokens to generate (default `150000`) to keep the output manageable.
 -   **Fully Dockerized**: Includes separate, optimized Dockerfiles for development (with hot-reloading) and production (with a minimal final image).
 -   **Zero Frontend Dependencies**: The UI is built with pure, dependency-free HTML, CSS, and vanilla JavaScript.
 
@@ -96,8 +97,9 @@ This is ideal for quick tests or if you prefer not to use Docker.
     -   When running via Docker, this path is *relative to the `/data` volume* you mounted (e.g., `/` or `/src`).
     -   When running locally, this can be any absolute or relative path on your system.
 2.  **Ignore Patterns**: Type a glob pattern (like `target`, `*.md`, `dist/**`) into the ignore input and press Enter. It will be added as a tag. You can add multiple patterns. Click the `×` on a tag to remove it.
-3.  **Analyze**: Click the "Analyze" button to start the process.
-4.  **Output**: The file tree and concatenated content will appear in the main text area. You can use the "Copy All" button to copy the entire output to your clipboard.
+3.  **Max Tokens**: (Optional) Enter the maximum number of tokens to output before the process stops. The default is `150000`.
+4.  **Analyze**: Click the "Analyze" button to start the process.
+5.  **Output**: The file tree and concatenated content will appear in the main text area. You can use the "Copy All" button to copy the entire output to your clipboard.
 
 ## License
 
