@@ -26,14 +26,21 @@
 
         <div class="ignore-section">
             <form id="ignore-form" class="ignore-form">
-                <input 
-                    type="text" 
-                    id="ignore-input" 
+                <input
+                    type="text"
+                    id="ignore-input"
                     class="path-input"
                     placeholder="Padrão a ignorar (ex: node_modules, *.log, **/*.tmp)">
             </form>
             <ul id="ignore-list" class="tag-list">
             </ul>
+            <input
+                type="number"
+                id="max-tokens-input"
+                class="path-input"
+                value="150000"
+                min="1"
+                placeholder="Máximo de tokens">
         </div>
 
         <div id="controls" class="controls-bar hidden">

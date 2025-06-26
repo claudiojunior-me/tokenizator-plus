@@ -27,6 +27,7 @@ fn generate_tree_and_content_internal(
     root_path: &Path,
     ignore_patterns_str: &[String],
     progress_tx: Option<&UnboundedSender<Progress>>,
+    max_tokens: usize,
 ) -> Result<String, std::io::Error> {
     let ignore_patterns: Vec<Pattern> = ignore_patterns_str
         .iter()
@@ -34,6 +35,8 @@ fn generate_tree_and_content_internal(
         .collect();
 
     let mut final_output = String::new();
+    let bpe = cl100k_base_singleton();
+    let mut current_tokens: usize;
     let mut file_paths = Vec::new();
 
     let mut tree_display = String::new();
@@ -69,12 +72,17 @@ fn generate_tree_and_content_internal(
 
     final_output.push_str(&tree_display);
     final_output.push_str("\n\n");
+    current_tokens = bpe.encode_with_special_tokens(&final_output).len();
+    if current_tokens >= max_tokens {
+        return Ok(final_output);
+    }
 
     let total_files = file_paths.len();
     if let Some(tx) = progress_tx {
         tx.send(Progress { processed: 0, total: total_files }).ok();
     }
 
+    let mut limit_reached = false;
     for (idx, path) in file_paths.into_iter().enumerate() {
         let display_path = path.strip_prefix(root_path).unwrap_or(&path);
         let display_path_str = format!("/{}", display_path.display());
@@ -82,6 +90,13 @@ fn generate_tree_and_content_internal(
         final_output.push_str("--------------------------------------------------\n");
         final_output.push_str(&format!("{}\n", display_path_str));
         final_output.push_str("--------------------------------------------------\n\n");
+        current_tokens = bpe.encode_with_special_tokens(&final_output).len();
+        if current_tokens >= max_tokens {
+            if let Some(tx) = progress_tx {
+                tx.send(Progress { processed: idx + 1, total: total_files }).ok();
+            }
+            break;
+        }
 
         match fs::read_to_string(&path) {
             Ok(content) => {
@@ -97,6 +112,11 @@ fn generate_tree_and_content_internal(
                         width = max_width
                     );
                     final_output.push_str(&formatted_line);
+                    current_tokens = bpe.encode_with_special_tokens(&final_output).len();
+                    if current_tokens >= max_tokens {
+                        limit_reached = true;
+                        break;
+                    }
                 }
             },
             Err(_) => {
@@ -105,9 +125,20 @@ fn generate_tree_and_content_internal(
         }
 
         final_output.push_str("\n\n");
+        current_tokens = bpe.encode_with_special_tokens(&final_output).len();
+        if current_tokens >= max_tokens {
+            if let Some(tx) = progress_tx {
+                tx.send(Progress { processed: idx + 1, total: total_files }).ok();
+            }
+            limit_reached = true;
+        }
 
         if let Some(tx) = progress_tx {
             tx.send(Progress { processed: idx + 1, total: total_files }).ok();
+        }
+
+        if limit_reached {
+            break;
         }
     }
 
@@ -117,16 +148,18 @@ fn generate_tree_and_content_internal(
 pub fn generate_tree_and_content(
     root_path: &Path,
     ignore_patterns_str: &[String],
+    max_tokens: usize,
 ) -> Result<String, std::io::Error> {
-    generate_tree_and_content_internal(root_path, ignore_patterns_str, None)
+    generate_tree_and_content_internal(root_path, ignore_patterns_str, None, max_tokens)
 }
 
 pub fn generate_tree_and_content_with_progress(
     root_path: &Path,
     ignore_patterns_str: &[String],
     progress_tx: &UnboundedSender<Progress>,
+    max_tokens: usize,
 ) -> Result<String, std::io::Error> {
-    generate_tree_and_content_internal(root_path, ignore_patterns_str, Some(progress_tx))
+    generate_tree_and_content_internal(root_path, ignore_patterns_str, Some(progress_tx), max_tokens)
 }
 
 
@@ -170,7 +203,7 @@ mod tests {
     fn line_numbers_align() {
         for &count in &[9usize, 10, 100] {
             let dir = create_dir_with_file(count);
-            let output = generate_tree_and_content(dir.path(), &[]).unwrap();
+            let output = generate_tree_and_content(dir.path(), &[], 150_000).unwrap();
             let lines = extract_file_lines(&output);
             assert_eq!(lines.len(), count);
             let width = count.to_string().len();
@@ -199,7 +232,7 @@ mod tests {
         fs::write(root.join("target/debug/out.txt"), "ignore").unwrap();
 
         let patterns = vec!["*.log".to_string(), "node_modules".to_string(), "target".to_string()];
-        let output = generate_tree_and_content(root, &patterns).unwrap();
+        let output = generate_tree_and_content(root, &patterns, 150_000).unwrap();
 
         assert!(output.contains("keep.txt"));
         assert!(output.contains("src"));
